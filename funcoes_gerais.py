@@ -1,6 +1,6 @@
-
 import interface_grafica as ig
 from random import randint
+
 
 def main():
     """Esta e a funcão que inicia o jogo, o primeiro menu que aparecera, é acionada somente uma vez"""
@@ -12,71 +12,12 @@ def main():
     if comando == 3: # <- input para jogador x bot dificil
         jogo_bot_dificil()
 
-def menu_pos_jogo(modo_de_jogo):
-    """Esta função é responsavel por administrar o jogo em caso de empate ou vitoria
-    pode recomeçar o jogo, ir para o menu principal ou sair do jogo
-    str -> function"""
-    comando = ig.exibe_menu_pos_jogo() # <- imprime o menu na tela
-    jogos = {"jogador x jogador":jogo_2_jogadores, # <- dicionario com as funcoes dos jogos, em caso de uma nova partida
-             "bot facil":jogo_bot_facil,
-              "bot dificil":jogo_bot_dificil}
-    if comando == "jogar novamente": # <- input para jogar novamente, utiliza o dicionario acima para chamar a função dos jogos
-        return jogos[modo_de_jogo]()
-    if comando == "menu geral": # <- input para ir para o menu principal
-        return menu_geral()
-    else: # erro de input ou usuario saindo do jogo
-        return ""
-
-def menu_geral():
-    """Esta funçao é o menu principal, aqui é possivel alterar qualquer detalhe no jogo
-    é chamado exclusivamente pelo input do usuario"""
-    comando = ig.exibe_menu_geral() # <- imprime o menu principal na tela
-    jogos = {"jogador x jogador":jogo_2_jogadores, # <- dicionario com as funçoes dos jogos, usado para chamar a função
-             "bot facil":jogo_bot_facil,
-              "bot dificil":jogo_bot_dificil}
-    if comando == "jogador x jogador" or comando == "bot facil" or comando == "bot dificil": # <- analisando se o input e valido
-        jogos[comando]()
-    else: # <- input inesperado ou usuario saindo do jogo
-        return "" 
-
 def gerador_de_campo():
     """Esta e a função que gera o campo para o jogo da velha"""
-    return[[0,0,0],
-           [0,0,0], 
-           [0,0,0]]
-
-def altera_campo(campo,valor,modo_de_jogo):
-    """Esta e a função que é chamada para realizar uma jogada(alterar o campo)
-    list(matriz com o campo do jogo),int,str -> list(matriz com o campo do jogo ja alterado)"""
-    linha = {"A":0,"B":1,"C":2} # <- Dicionario com as linhas, usado para alterar o campo
-    coluna = {"1":0,"2":1,"3":2} # <- Dicionario com as colunas, usado para alterar o campo
-    while True:
-        comando = ig.pede_jogada(valor) # <- pede um input para o jogador 
-        if comando == "R": # <- input para reiniciar  o jogo
-            return reinicia(modo_de_jogo)
-        elif comando == "M": # <- input para voltar para o menu principal
-            return menu_geral(modo_de_jogo)
-        elif comando[0] in "ABC" and comando[1] in "123": # <- conferindo se o input esta dentro do esperado
-            if campo[linha[comando[0]]][coluna[comando[1]]] == 0: # <- conferindo se o espaço escolhido esta vazio
-                if valor == 2: # alterando o numero do jogador(2) para sua representação no campo do jogo (-1)
-                    valor = -1 
-                campo[linha[comando[0]]][coluna[comando[1]]] = valor # <- altera o campo de jogo de acordo com o input do usuario
-                break
-            else:
-                ig.exibe_campo(campo)
-                print("Esse campo ja foi escolhido") # <- campo escolhido pelo usuario ja foi preenchido
-        else:
-            ig.exibe_campo(campo)
-            print("Talvez você tenha errado o input") # <- input inesperado
+    campo = []
+    for i in range(3):
+        campo.append(3*[0])
     return campo
-
-def reinicia(modo_de_jogo):
-    """Esta função reinicia o jogo, precisa do modo de jogo para continuar no mesmo modo
-    str -> function"""
-    jogos = {"jogador x jogador":jogo_2_jogadores, # <- dicionario com as possiveis funcoes para o jogo
-             "bot facil":jogo_bot_facil,
-              "bot dificil":jogo_bot_dificil}
-    return jogos[modo_de_jogo]() # <- reinicia o jogo de acordo com o modo de jogo
 
     
 def jogo_2_jogadores():
@@ -86,12 +27,16 @@ def jogo_2_jogadores():
     acao = 0 # acao e uma variavel utilizada para registrar o numero de jogadas e a vez de cada jogador
     while condicao_vitoria(campo) == 0 : # <- analisa se alguem ganhou
         ig.exibe_campo(campo) # <- imprime o campo no console 
-        campo = altera_campo(campo,(acao%2)+1,"jogador x jogador") # <- pede o input ao usuario e altera o campo
+        campo = altera_campo(campo,(acao%2),jogo_2_jogadores) # <- pede o input ao usuario e altera o campo
+        if campo == "R": # <- input para reiniciar
+            return reinicia(jogo_2_jogadores)
+        elif campo == "M": # <- input para voltar ao menu
+            return menu_geral()
         acao += 1 # <- passa a vez quando um jogador realiza uma jogada
     acao -=1 # retorna a jogada em um, para que o placar fique correto, pois o jogador fez a jogada que ganhou e passou sua vez
     ultimo_jogador = (acao%2) # <- diz quem foi o ultimo jogador a jogar
     checa_ganhador(ultimo_jogador,campo) # <- analisa quem foi o ganhador
-    menu_pos_jogo("jogador x jogador") # <- chama o menu pos jogo
+    menu_pos_jogo(jogo_2_jogadores) # <- chama o menu pos jogo
 
 def jogo_bot_facil():
     """Esta e a função que gerencia o modo jogador x bot facil, gerencia a vez do jogador e do computador, 
@@ -100,11 +45,15 @@ def jogo_bot_facil():
     while condicao_vitoria(campo) == 0: # Analisa se alguem ganhou
         ultimo_jogador = 0 # <- mantem salvo que foi o ultimo a jogar
         ig.exibe_campo(campo) # <- exibe o campo no console
-        altera_campo(campo,1,"bot facil") # <- altera o campo de acordo com o input do usuario
+        campo = altera_campo(campo,0,jogo_bot_facil) # <- altera o campo de acordo com o input do usuario
+        if campo == "R": # <- input para reiniciar
+            return reinicia(jogo_bot_facil)
+        elif campo == "M": # <- input para voltar ao menu
+            return menu_geral()
         if condicao_vitoria(campo) == 0: # <- checa se o jogador ganhou na linha acima
             campo = jogada_bot_facil(campo) # <- realiza uma jogada para o bot facil(aleatoriamente)
     checa_ganhador(ultimo_jogador,campo) # <- checa quem ganhou a partida
-    menu_pos_jogo("bot facil") # <- chama o menu do pos jogo
+    menu_pos_jogo(jogo_bot_facil) # <- chama o menu do pos jogo
 
 def jogada_bot_facil(campo):
     """Esta fução realiza a jogada do bot facil, sua decisão e escolhida aleatoriamente, por isso sua dificuldade
@@ -124,13 +73,17 @@ def jogo_bot_dificil():
     campo = gerador_de_campo() # <- cria uma matriz(campo de jogo) como variavel
     while condicao_vitoria(campo) == 0: # <- checa se alguem ganhou
         ig.exibe_campo(campo) # <- imprime o campo no console 
-        altera_campo(campo,1,"bot dificil") # <- altera o campo de acordo com o input do usuario
+        campo = altera_campo(campo,0,jogo_bot_dificil)# <- altera o campo de acordo com o input do usuario
+        if campo == "R": # <- input para reiniciar
+            return reinicia(jogo_bot_dificil)
+        elif campo == "M": # <- input para voltar ao menu
+            return menu_geral()
         ultimo_jogador = 0 # <- mantem salvo que foi o ultimo a jogar 
         if condicao_vitoria(campo) == 0: # <- checa se o jogador ganhou na linha acima
             campo = jogada_bot_dificil(campo) # <- pede a jogada ao bot dificil
             ultimo_jogador = 1 # <- mantem salvo que foi o ultimo jogador 
     checa_ganhador(ultimo_jogador,campo) # <-analisa quem foi o vencedor 
-    menu_pos_jogo("bot dificil") # <- chama o menu pos jogo
+    menu_pos_jogo(jogo_bot_dificil) # <- chama o menu pos jogo
 
 def jogada_bot_dificil(campo):
             ########################################################################################
@@ -239,6 +192,32 @@ def jogada_bot_dificil(campo):
                         campo[i[0]][i[1]] = -1
                         return campo
 
+def altera_campo(campo,valor,modo_de_jogo):
+    """Esta e a função que é chamada para realizar uma jogada(alterar o campo)
+    list(matriz com o campo do jogo),int,str -> list(matriz com o campo do jogo ja alterado)"""
+    linha = {"A":0,"B":1,"C":2} # <- Dicionario com as linhas, usado para alterar o campo
+    coluna = {"1":0,"2":1,"3":2} # <- Dicionario com as colunas, usado para alterar o campo
+    while True:
+        comando = ig.pede_jogada(valor) # <- pede um input para o jogador 
+        if comando == "R": # <- input para reiniciar  o jogo
+            return comando
+        elif comando == "M": # <- input para voltar para o menu principal
+            return comando
+        elif comando[0] in "ABC" and comando[1] in "123": # <- conferindo se o input esta dentro do esperado
+            if campo[linha[comando[0]]][coluna[comando[1]]] == 0: # <- conferindo se o espaço escolhido esta vazio
+                valor += 1 
+                if valor == 2: # alterando o numero do jogador(2) para sua representação no campo do jogo (-1)
+                    valor = -1 
+                campo[linha[comando[0]]][coluna[comando[1]]] = valor # <- altera o campo de jogo de acordo com o input do usuario
+                break
+            else:
+                ig.exibe_campo(campo)
+                print("Esse campo ja foi escolhido") # <- campo escolhido pelo usuario ja foi preenchido
+        else:
+            ig.exibe_campo(campo)
+            print("Talvez você tenha errado o input") # <- input inesperado
+    return campo
+
 
 def checa_ganhador(ultima_jogada,campo):
     """Esta função checa quem se houve um ganhador, em caso positivo ela retorna quem foi o ganhador
@@ -275,11 +254,33 @@ def condicao_vitoria(campo):
     if 0 not in campo[0] and 0 not in campo[1] and 0 not in campo[2]:
         return 2
     return 0
+
+def menu_geral():
+    """Esta funçao é o menu principal, aqui é possivel alterar qualquer detalhe no jogo
+    é chamado exclusivamente pelo input do usuario"""
+    comando = ig.exibe_menu_geral() # <- imprime o menu principal na tela    
+    if comando == "sair": # <- input inesperado ou usuario saindo do jogo
+        return exit()
+    else: # <- analisando se o input e valido
+        return comando()
+
+def menu_pos_jogo(modo_de_jogo):
+    """Esta função é responsavel por administrar o jogo em caso de empate ou vitoria
+    pode recomeçar o jogo, ir para o menu principal ou sair do jogo
+    str -> function"""
+    comando = ig.exibe_menu_pos_jogo() # <- imprime o menu na tela
+    if comando == "jogar novamente": # <- input para jogar novamente, utiliza o dicionario acima para chamar a função dos jogos
+        return modo_de_jogo()
+    if comando == "menu geral": # <- input para ir para o menu principal
+        return menu_geral()
+    elif comando == "sair": # erro de input ou usuario saindo do jogo
+        return exit()
+
+def reinicia(modo_de_jogo):
+    """Esta função reinicia o jogo, precisa do modo de jogo para continuar no mesmo modo
+    str -> function"""
+    return modo_de_jogo() # <- reinicia o jogo de acordo com o modo de jogo
+
         
-main()
-
-
-
-    
-
-
+if __name__ == "__main__":
+    main()
